@@ -60,6 +60,10 @@ namespace RedSquareEscape.Classes
                 }
             }
         }
+        public void CreateExplosionEffect()
+        {
+            // پیاده‌سازی ایجاد جلوه‌های ذره‌ای
+        }
     }
 
     public class Particle

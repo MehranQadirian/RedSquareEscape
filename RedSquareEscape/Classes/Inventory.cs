@@ -8,31 +8,38 @@ namespace RedSquareEscape.Classes
 {
     public class Inventory
     {
-        public List<Item> Items { get; set; } = new List<Item>();
+        private List<Item> items = new List<Item>();
+        public List<Item> Items { get; private set; } = new List<Item>();
         public int Capacity { get; set; } = 10;
 
         public bool AddItem(Item item)
         {
-            if (Items.Count < Capacity)
+            if (items.Count < Capacity)
             {
-                Items.Add(item);
+                items.Add(item);
                 return true;
             }
             return false;
         }
 
-        public void RemoveItem(Item item)
+        public void RemoveItem(ItemType type)
         {
-            Items.Remove(item);
+            var item = Items.FirstOrDefault(i => i.Type == type);
+            if (item != null)
+                Items.Remove(item);
         }
 
         public void UseItem(int index)
         {
-            if (index >= 0 && index < Items.Count)
+            if (index >= 0 && index < items.Count)
             {
                 // Item usage logic would be handled by Player class
-                Items.RemoveAt(index);
+                items.RemoveAt(index);
             }
+        }
+        public bool HasItem(ItemType type)
+        {
+            return Items.Any(item => item.Type == type);
         }
     }
 }

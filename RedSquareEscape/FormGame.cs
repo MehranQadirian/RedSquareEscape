@@ -20,12 +20,21 @@ namespace RedSquareEscape
         private Panel pauseMenu;
         private InputState inputState = new InputState();
         private Dictionary<Keys, bool> keyStates = new Dictionary<Keys, bool>();
-        private ParticleSystem particleSystem = new ParticleSystem();
-        public FormGame(Player player)
+        //private ParticleSystem particleSystem = new ParticleSystem();
+        private DateTime lastUpdateTime;
+        private ParticleSystem particleSystem;
+        public FormGame()
         {
-            this.player = player;
-            InitializeComponents();
-            InitializeGame();
+            InitializeComponent();
+
+            particleSystem = new ParticleSystem();
+            gameManager = new GameManager(
+            particleSystem,
+            comboText => { /* نمایش متن کامبو */ },
+            player,
+            this.ClientSize);
+
+            player = new Player(gameManager);
         }
 
         private void InitializeComponents()
@@ -35,7 +44,7 @@ namespace RedSquareEscape
             this.WindowState = FormWindowState.Maximized;
             this.KeyPreview = true;
             this.KeyDown += FormGame_KeyDown;
-
+            this.KeyUp += FormGame_KeyUp;
             // دکمه مکث
             btnPause = new Button
             {
@@ -184,7 +193,11 @@ namespace RedSquareEscape
 
         private void InitializeGame()
         {
-            gameManager = new GameManager(player);
+            gameManager = new GameManager(
+            particleSystem,
+            comboText => { /* نمایش متن کامبو */ },
+            player,
+            this.ClientSize);
             gameManager.OnGameOver += GameOver;
             gameManager.OnLevelComplete += LevelComplete;
 
@@ -195,6 +208,12 @@ namespace RedSquareEscape
 
         private void GameTimer_Tick(object sender, EventArgs e)
         {
+            float deltaTime = 0.016f; // ~60 FPS
+
+            if (player.SpecialAttackCooldown > 0)
+            {
+                player.SpecialAttackCooldown -= deltaTime;
+            }
             player.UpdateMovement(inputState);
             // Update UI
             lblScore.Text = $"Score: {player.Score}";
@@ -253,7 +272,7 @@ namespace RedSquareEscape
                 case Keys.Right:
                     inputState.MoveRight = true;
                     break;
-                case Keys.Space:
+                case Keys.B:
                     // Shoot
                     gameManager.Bullets.AddRange(player.CurrentWeapon.Shoot(player.Position));
                     break;
@@ -313,7 +332,13 @@ namespace RedSquareEscape
             inventory.ShowDialog();
             gameManager.ResumeGame();
         }
-
+        private void UseInventoryItem(ItemType itemType)
+        {
+            if (player.Inventory.Items.Any(i => i.Type == itemType))
+            {
+                player.UseItem(itemType);
+            }
+        }
         private void GameOver()
         {
             gameTimer.Stop();
@@ -327,6 +352,14 @@ namespace RedSquareEscape
         {
             player.Coins += player.Level * 10;
             MessageBox.Show($"Level {player.Level - 1} completed!\nYou earned {player.Level * 10} coins!");
+        }
+        private void UseBomb()
+        {
+            if (player.Inventory.HasItem(ItemType.Bomb))
+            {
+                gameManager.DefeatEnemies(50, true);
+                player.Inventory.RemoveItem(ItemType.Bomb);
+            }
         }
     }
 }

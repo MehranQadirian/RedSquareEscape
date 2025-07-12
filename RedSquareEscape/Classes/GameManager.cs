@@ -10,6 +10,7 @@ namespace RedSquareEscape.Classes
 {
     public class GameManager
     {
+        private Size gameAreaSize;
         public Player Player { get; set; }
         public List<Enemy> Enemies { get; set; } = new List<Enemy>();
         public List<Bullet> Bullets { get; set; } = new List<Bullet>();
@@ -26,11 +27,15 @@ namespace RedSquareEscape.Classes
 
         public event Action OnGameOver;
         public event Action OnLevelComplete;
+        private ParticleSystem particleSystem;
+        private Action<string> showComboText;
 
-        public GameManager(Player player)
+        public GameManager(ParticleSystem particleSystem, Action<string> comboTextHandler, Player player, Size gameAreaSize)
         {
-            Player = player;
-            InitializeGame();
+            this.particleSystem = particleSystem;
+            this.showComboText = comboTextHandler;
+            this.Player = player;
+            this.gameAreaSize = gameAreaSize;
         }
 
         private void InitializeGame()
@@ -64,33 +69,29 @@ namespace RedSquareEscape.Classes
             {
                 Bullets[i].Update();
 
-                // Check bullet-enemy collision
+                // بررسی خروج از صفحه
+                if (IsOutOfBounds(Bullets[i].Position))
+                {
+                    Bullets.RemoveAt(i);
+                    continue; // به گلوله بعدی برو
+                }
+
+                // بررسی برخورد با دشمنان
                 for (int j = Enemies.Count - 1; j >= 0; j--)
                 {
-                    if (IsColliding(Bullets[i].Position, Enemies[j].Position, 20))
+                    if (CheckCollision(Bullets[i].Position, Enemies[j].Position, Bullets[i].Size, Enemies[j].Size))
                     {
                         Enemies[j].TakeDamage(Bullets[i].Damage);
                         Bullets.RemoveAt(i);
+
                         if (Enemies[j].Health <= 0)
                         {
                             Player.Score += 20;
                             Enemies.RemoveAt(j);
                         }
-                        break;
-                    }
-                }
 
-                try
-                {
-                    // Remove bullets that are out of bounds
-                    if (IsOutOfBounds(Bullets[i].Position))
-                    {
-                        Bullets.RemoveAt(i);
+                        break; // از حلقه دشمنان خارج شو
                     }
-                }
-                catch(Exception ex)
-                {
-                    MessageBox.Show($"Error : {ex.Message}" , "error");
                 }
             }
 
@@ -161,12 +162,68 @@ namespace RedSquareEscape.Classes
 
             Enemies.Add(enemy);
         }
-        private bool CheckCollision(PointF pos1, PointF pos2, float radius1, float radius2)
+        public void DefeatEnemies(int damage, bool applyEffects = false)
+        {
+            int enemiesDefeated = 0;
+
+            for (int i = Enemies.Count - 1; i >= 0; i--)
+            {
+                Enemies[i].TakeDamage(damage);
+
+                if (applyEffects)
+                {
+                    ApplySpecialEffects(Enemies[i]);
+                }
+
+                if (Enemies[i].Health <= 0)
+                {
+                    enemiesDefeated++;
+                    Enemies.RemoveAt(i);
+                }
+            }
+
+            // امتیاز مضاعف برای شکست چند دشمن با یک حمله
+            int bonus = (int)(enemiesDefeated * 0.5f);
+            Player.Score += 20 * enemiesDefeated + bonus;
+
+            // افزایش سکه برای هر 3 دشمن شکست داده شده
+            if (enemiesDefeated >= 3)
+            {
+                Player.Coins += enemiesDefeated / 3;
+            }
+            if (enemiesDefeated > 0)
+            {
+                // نمایش انیمیشن شکست دشمنان
+                ShowDefeatAnimation(enemiesDefeated);
+
+                // پخش صدای مناسب
+                //PlaySound(enemiesDefeated > 3 ? SoundType.MultiKill : SoundType.EnemyDefeated);
+            }
+        }
+        private void ShowDefeatAnimation(int count)
+        {
+            if (particleSystem != null)
+            {
+                particleSystem.CreateExplosionEffect();
+            }
+
+            if (showComboText != null && count > 1)
+            {
+                showComboText(count + " KILLS!");
+            }
+        }
+        private void ApplySpecialEffects(Enemy enemy)
+        {
+            // اینجا می‌توانید اثرات ویژه مانند انفجار، فریز کردن و... را پیاده‌سازی کنید
+            enemy.ApplyEffect(EffectType.Explosion); // مثال
+        }
+        private bool CheckCollision(PointF pos1, PointF pos2, float size1, float size2)
         {
             float dx = pos1.X - pos2.X;
             float dy = pos1.Y - pos2.Y;
-            float distance = (float)Math.Sqrt(dx * dx + dy * dy);
-            return distance < (radius1 + radius2);
+            float distanceSquared = dx * dx + dy * dy;
+            float minDistance = (size1 + size2) / 2;
+            return distanceSquared < minDistance * minDistance;
         }
         private void HandleCollisions()
         {
@@ -227,8 +284,8 @@ namespace RedSquareEscape.Classes
 
         private bool IsOutOfBounds(PointF position)
         {
-            return position.X < -50 || position.X > 850 ||
-                   position.Y < -50 || position.Y > 650;
+            return position.X < -50 || position.X > gameAreaSize.Width + 50 ||
+                   position.Y < -50 || position.Y > gameAreaSize.Height + 50;
         }
 
         private void CompleteLevel()

@@ -12,5 +12,7 @@ namespace RedSquareEscape.Classes
         public bool MoveDown { get; set; }
         public bool MoveLeft { get; set; }
         public bool MoveRight { get; set; }
+
+        public bool IsMoving => MoveUp || MoveDown || MoveLeft || MoveRight;
     }
 }

@@ -21,6 +21,7 @@ namespace RedSquareEscape.Classes
         public string Name { get; set; }
         public bool IsBoss { get; set; }
         public EnemyType Type { get; set; }
+        public float Size { get; set; } = 30f;
 
         public Enemy(PointF position, float health, float damage, float speed, Color color)
         {
@@ -29,6 +30,7 @@ namespace RedSquareEscape.Classes
             Damage = damage;
             Speed = speed;
             Color = color;
+            Size = 30f;
             Name = $"E{new Random().Next(1000)}";
             Type = EnemyType.Normal;
         }
@@ -36,11 +38,13 @@ namespace RedSquareEscape.Classes
         {
             switch (effect)
             {
-                case EffectType.Freeze:
-                    Speed *= 0.3f; // Reduce speed
+                case EffectType.Explosion:
+                    // کاهش سلامت اضافی برای انفجار
+                    Health -= 10;
                     break;
-                case EffectType.Poison:
-                    // Apply poison over time
+                case EffectType.Freeze:
+                    // کاهش سرعت برای اثر فریز
+                    Speed *= 0.5f;
                     break;
             }
         }
@@ -127,6 +131,8 @@ namespace RedSquareEscape.Classes
     }
     public enum EffectType
     {
+        None,
+        Explosion,
         Freeze,
         Poison
     }

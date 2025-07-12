@@ -23,7 +23,6 @@ namespace RedSquareEscape.Classes
 
         // تنظیمات حرکت
         public float MoveSpeed { get; set; } = 5f;
-        public float Acceleration { get; set; } = 0.2f;
         public float MaxSpeed { get; set; } = 8f;
         public float Inertia { get; set; } = 0.95f;
 
@@ -42,64 +41,63 @@ namespace RedSquareEscape.Classes
         public Color Color { get; set; } = Color.Red;
         public Inventory Inventory { get; set; } = new Inventory();
         public Weapon CurrentWeapon { get; set; } = new Weapon();
-
-        public void UpdateMovement(InputState input)
+        public float Acceleration { get; set; } = 0.15f;
+        public float Deceleration { get; set; } = 0.92f;
+        public float SpecialAttackCooldown { get; set; }
+        private GameManager gameManager;
+        // وضعیت حرکت
+        public PointF Velocity { get; set; } = PointF.Empty;
+        public Player(GameManager gm)
         {
-            // اعمال شتاب بر اساس ورودی
-            float targetVelocityX = 0;
-            float targetVelocityY = 0;
+            this.gameManager = gm;
+            // سایر مقداردهی‌ها...
+        }
+        public void UpdateMovement(InputState input, float deltaTime = 1f)
+        {
+            // محاسبه جهت هدف
+            PointF targetDirection = PointF.Empty;
 
-            if (input.MoveUp) targetVelocityY -= MoveSpeed;
-            if (input.MoveDown) targetVelocityY += MoveSpeed;
-            if (input.MoveLeft) targetVelocityX -= MoveSpeed;
-            if (input.MoveRight) targetVelocityX += MoveSpeed;
+            if (input.MoveUp) targetDirection.Y -= 1;
+            if (input.MoveDown) targetDirection.Y += 1;
+            if (input.MoveLeft) targetDirection.X -= 1;
+            if (input.MoveRight) targetDirection.X += 1;
 
             // نرمالایز کردن جهت در صورت حرکت مورب
-            if (targetVelocityX != 0 && targetVelocityY != 0)
+            if (targetDirection.X != 0 && targetDirection.Y != 0)
             {
-                float length = (float)Math.Sqrt(targetVelocityX * targetVelocityX + targetVelocityY * targetVelocityY);
-                targetVelocityX = targetVelocityX / length * MoveSpeed;
-                targetVelocityY = targetVelocityY / length * MoveSpeed;
+                float length = (float)Math.Sqrt(targetDirection.X * targetDirection.X + targetDirection.Y * targetDirection.Y);
+                targetDirection.X /= length;
+                targetDirection.Y /= length;
             }
 
-            // اعمال شتاب تدریجی
-            velocity = new PointF(
-                Lerp(velocity.X, targetVelocityX, Acceleration),
-                Lerp(velocity.Y, targetVelocityY, Acceleration)
+            // محاسبه سرعت هدف
+            PointF targetVelocity = new PointF(
+                targetDirection.X * MoveSpeed,
+                targetDirection.Y * MoveSpeed
             );
 
-            // محدودیت سرعت
-            float currentSpeed = (float)Math.Sqrt(velocity.X * velocity.X + velocity.Y * velocity.Y);
-            if (currentSpeed > MaxSpeed)
-            {
-                velocity = new PointF(
-                    velocity.X / currentSpeed * MaxSpeed,
-                    velocity.Y / currentSpeed * MaxSpeed
-                );
-            }
+            // اعمال شتاب/ترمز
+            Velocity = new PointF(
+                Lerp(Velocity.X, targetVelocity.X, input.IsMoving ? Acceleration : Deceleration),
+                Lerp(Velocity.Y, targetVelocity.Y, input.IsMoving ? Acceleration : Deceleration)
+            );
 
-            // اعمال حرکت
+            // اعمال حرکت با در نظر گرفتن زمان فریم
             Position = new PointF(
-                Position.X + velocity.X,
-                Position.Y + velocity.Y
+                Position.X + Velocity.X * deltaTime,
+                Position.Y + Velocity.Y * deltaTime
             );
 
             // محاسبه زاویه چرخش
-            if (velocity.X != 0 || velocity.Y != 0)
+            if (Velocity.X != 0 || Velocity.Y != 0)
             {
-                RotationAngle = (float)(Math.Atan2(velocity.Y, velocity.X) * 180 / Math.PI);
-            }
-
-            // اعمال اینرسی هنگام رها کردن کلیدها
-            if (!input.MoveUp && !input.MoveDown && !input.MoveLeft && !input.MoveRight)
-            {
-                velocity = new PointF(velocity.X * Inertia, velocity.Y * Inertia);
+                RotationAngle = (float)(Math.Atan2(Velocity.Y, Velocity.X) * 180 / Math.PI);
             }
 
             // محدودیت مرزهای صفحه
             Position = new PointF(
-                Clamp(Position.X, 30, 770),
-                Clamp(Position.Y, 30, 570)
+                Math.Max(30, Math.Min(770, Position.X)),
+                Math.Max(30, Math.Min(570, Position.Y))
             );
         }
 
@@ -107,7 +105,14 @@ namespace RedSquareEscape.Classes
         {
             return a + (b - a) * t;
         }
-
+        public void UseSpecialAttack()
+        {
+            if (SpecialAttackCooldown <= 0 && gameManager != null)
+            {
+                gameManager.DefeatEnemies(30);
+                SpecialAttackCooldown = 5f;
+            }
+        }
         private float Clamp(float value, float min, float max)
         {
             return (value < min) ? min : (value > max) ? max : value;
@@ -158,25 +163,20 @@ namespace RedSquareEscape.Classes
             Coins += amount;
         }
 
-        public void UseItem(Item item)
+        public void UseItem(ItemType itemType)
         {
-            switch (item.Type)
+            var item = Inventory.Items.FirstOrDefault(i => i.Type == itemType);
+            if (item != null)
             {
-                case ItemType.HealthPotion:
-                    Health = Math.Min(Health + item.Value, MaxHealth);
-                    break;
-                case ItemType.ShieldPotion:
-                    Shield = Math.Min(Shield + item.Value, MaxShield);
-                    break;
-                case ItemType.Bomb:
-                    // Implement bomb logic
-                    break;
-                case ItemType.Freeze:
-                    // Implement freeze logic
-                    break;
+                switch (item.Type)
+                {
+                    case ItemType.HealthPotion:
+                        Health = Math.Min(Health + item.Value, MaxHealth);
+                        break;
+                        // سایر موارد...
+                }
+                Inventory.RemoveItem(item.Type);
             }
-
-            Inventory.RemoveItem(item);
         }
 
         public void Draw(Graphics g)
