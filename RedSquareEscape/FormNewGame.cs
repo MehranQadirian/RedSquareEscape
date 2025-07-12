@@ -8,70 +8,120 @@ namespace RedSquareEscape
     public partial class FormNewGame : Form
     {
         private TextBox txtPlayerName;
-        private ComboBox cmbAge;
+        private ComboBox cmbPlayerAge;
         private Button btnStart;
         private Button btnBack;
 
         public FormNewGame()
         {
             InitializeComponents();
-            this.Text = "New Game";
-            this.Size = new Size(400, 300);
-            this.StartPosition = FormStartPosition.CenterScreen;
-            this.FormBorderStyle = FormBorderStyle.FixedDialog;
         }
 
         private void InitializeComponents()
         {
-            // Player Name
-            var lblName = new Label
+            this.BackColor = Color.FromArgb(30, 30, 30);
+            this.FormBorderStyle = FormBorderStyle.None;
+            this.WindowState = FormWindowState.Maximized;
+
+            // عنوان فرم
+            Label lblTitle = new Label
+            {
+                Text = "New Game",
+                Font = new Font("Arial", 24, FontStyle.Bold),
+                ForeColor = Color.FromArgb(134, 253, 233),
+                AutoSize = true,
+                Location = new Point(
+                    (this.ClientSize.Width - 200) / 2,
+                    this.ClientSize.Height / 4
+                )
+            };
+            this.Controls.Add(lblTitle);
+
+            // فیلد نام بازیکن
+            Label lblName = new Label
             {
                 Text = "Player Name:",
-                Location = new Point(50, 50),
-                AutoSize = true
+                Font = new Font("Arial", 14),
+                ForeColor = Color.White,
+                AutoSize = true,
+                Location = new Point(
+                    (this.ClientSize.Width - 300) / 2,
+                    lblTitle.Bottom + 50
+                )
             };
             this.Controls.Add(lblName);
 
             txtPlayerName = new TextBox
             {
-                Location = new Point(150, 50),
-                Size = new Size(200, 30)
+                Font = new Font("Arial", 14),
+                Size = new Size(300, 30),
+                Location = new Point(
+                    (this.ClientSize.Width - 300) / 2,
+                    lblName.Bottom + 10
+                )
             };
             this.Controls.Add(txtPlayerName);
 
-            // Player Age
-            var lblAge = new Label
+            // فیلد سن بازیکن
+            Label lblAge = new Label
             {
-                Text = "Age:",
-                Location = new Point(50, 100),
-                AutoSize = true
+                Text = "Player Age:",
+                Font = new Font("Arial", 14),
+                ForeColor = Color.White,
+                AutoSize = true,
+                Location = new Point(
+                    (this.ClientSize.Width - 300) / 2,
+                    txtPlayerName.Bottom + 20
+                )
             };
             this.Controls.Add(lblAge);
 
-            cmbAge = new ComboBox
+            cmbPlayerAge = new ComboBox
             {
-                Location = new Point(150, 100),
+                Font = new Font("Arial", 14),
+                Size = new Size(300, 30),
+                Location = new Point(
+                    (this.ClientSize.Width - 300) / 2,
+                    lblAge.Bottom + 10
+                ),
                 DropDownStyle = ComboBoxStyle.DropDownList
             };
-            for (int i = 8; i <= 70; i++) cmbAge.Items.Add(i);
-            cmbAge.SelectedIndex = 12; // Default to 20 years
-            this.Controls.Add(cmbAge);
 
-            // Buttons
+            // پر کردن سن‌ها از 8 تا 70
+            for (int i = 8; i <= 70; i++)
+            {
+                cmbPlayerAge.Items.Add(i);
+            }
+            cmbPlayerAge.SelectedIndex = 12; // Default to 20 years old
+            this.Controls.Add(cmbPlayerAge);
+
+            // دکمه شروع
             btnStart = new Button
             {
-                Text = "Start",
-                Location = new Point(100, 180),
-                Size = new Size(80, 30)
+                Text = "Start Game",
+                Font = new Font("Arial", 16),
+                ForeColor = Color.White,
+                BackColor = Color.FromArgb(70, 70, 70),
+                FlatStyle = FlatStyle.Flat,
+                Size = new Size(200, 50),
+                Location = new Point(
+                    (this.ClientSize.Width - 200) / 2,
+                    cmbPlayerAge.Bottom + 40
+                )
             };
             btnStart.Click += BtnStart_Click;
             this.Controls.Add(btnStart);
 
+            // دکمه بازگشت
             btnBack = new Button
             {
                 Text = "Back",
-                Location = new Point(220, 180),
-                Size = new Size(80, 30)
+                Font = new Font("Arial", 14),
+                ForeColor = Color.White,
+                BackColor = Color.FromArgb(70, 70, 70),
+                FlatStyle = FlatStyle.Flat,
+                Size = new Size(100, 40),
+                Location = new Point(20, 20)
             };
             btnBack.Click += BtnBack_Click;
             this.Controls.Add(btnBack);
@@ -81,47 +131,34 @@ namespace RedSquareEscape
         {
             if (string.IsNullOrWhiteSpace(txtPlayerName.Text))
             {
-                MessageBox.Show("Please enter your name!");
+                MessageBox.Show("Please enter your name");
                 return;
             }
 
-            // Show tutorial for first-time players
-            ShowTutorial();
-
-            // Get settings
-            var settings = new FormSettings();
-            if (settings.ShowDialog() == DialogResult.OK)
+            // ایجاد بازیکن جدید
+            Player player = new Player
             {
-                var player = new Player(
-                    txtPlayerName.Text,
-                    (int)cmbAge.SelectedItem,
-                    new PointF(400, 300),
-                    settings.GetSelectedShape(),
-                    settings.GetSelectedColor()
-                );
+                Name = txtPlayerName.Text,
+                Age = (int)cmbPlayerAge.SelectedItem,
+                Position = new PointF(400, 300)
+            };
 
+            // نمایش آموزش بازی
+            FormTutorial tutorial = new FormTutorial();
+            if (tutorial.ShowDialog() == DialogResult.OK)
+            {
+                // شروع بازی
+                FormGame gameForm = new FormGame(player);
+                gameForm.Show();
                 this.Hide();
-                new FormGame(player, 1, "Level 1").Show();
             }
-        }
-
-        private void ShowTutorial()
-        {
-            string tutorial = "Welcome to RedSquareEscape!\n\n" +
-                             "Controls:\n" +
-                             "- Move: WASD or Arrow Keys\n" +
-                             "- Shoot: Space\n" +
-                             "- Items: 1-9 keys\n" +
-                             "- Pause: P or ESC\n\n" +
-                             "Goal: Defeat all enemies in each level!";
-
-            MessageBox.Show(tutorial, "Tutorial", MessageBoxButtons.OK);
         }
 
         private void BtnBack_Click(object sender, EventArgs e)
         {
-            this.DialogResult = DialogResult.Cancel;
             this.Close();
+            FormMenu mainMenu = new FormMenu();
+            mainMenu.Show();
         }
     }
 }

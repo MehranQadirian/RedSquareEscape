@@ -7,74 +7,130 @@ namespace RedSquareEscape
 {
     public partial class FormMenu : Form
     {
+        private Button btnNewGame;
+        private Button btnLoadGame;
+        private Button btnSettings;
+        private Button btnExit;
+        private Label lblTitle;
+
         public FormMenu()
         {
             InitializeComponents();
-            this.BackColor = Color.FromArgb(30, 30, 30);
-            this.DoubleBuffered = true;
-            this.WindowState = FormWindowState.Maximized;
         }
 
         private void InitializeComponents()
         {
+            this.BackColor = Color.FromArgb(30, 30, 30);
+            this.FormBorderStyle = FormBorderStyle.None;
+            this.WindowState = FormWindowState.Maximized;
+
             // عنوان بازی
-            var lblTitle = new Label()
+            lblTitle = new Label
             {
-                Text = "RedSquareEscape",
-                Font = new Font("Arial", 48, FontStyle.Bold),
-                ForeColor = Color.FromArgb(0, 200, 200),
+                Text = "RED SQUARE ESCAPE",
+                Font = new Font("Arial", 60, FontStyle.Bold),
+                ForeColor = Color.FromArgb(134, 253, 233),
                 AutoSize = true,
-                Location = new Point(this.ClientSize.Width / 2 - 200, 100)
+                BackColor = Color.Transparent
             };
-
-            // دکمه‌های منو
-            var btnNewGame = new MenuButton("شروع جدید", new Point(this.ClientSize.Width / 2 - 100, 250),
-                () => StartNewGame());
-
-            var btnLoadGame = new MenuButton("بارگذاری بازی", new Point(this.ClientSize.Width / 2 - 100, 320),
-                () => LoadGame());
-
-            var btnSettings = new MenuButton("تنظیمات", new Point(this.ClientSize.Width / 2 - 100, 390),
-                () => ShowSettings());
-
-            var btnExit = new MenuButton("خروج", new Point(this.ClientSize.Width / 2 - 100, 460),
-                () => Application.Exit());
-
+            lblTitle.Location = new Point(
+                (this.ClientSize.Width) / 2 + 250 - (lblTitle.Width / 2),
+                this.ClientSize.Height / 2 + 100
+            );
             this.Controls.Add(lblTitle);
+
+            // دکمه شروع بازی جدید
+            btnNewGame = new Button
+            {
+                Text = "New Game",
+                Font = new Font("Arial", 18),
+                ForeColor = Color.White,
+                BackColor = Color.FromArgb(70, 70, 70),
+                FlatStyle = FlatStyle.Flat,
+                Size = new Size(300, 50)
+            };
+            btnNewGame.Location = new Point(
+                (this.ClientSize.Width) / 2 + 490,
+                lblTitle.Bottom + 100
+            );
+            btnNewGame.Click += BtnNewGame_Click;
             this.Controls.Add(btnNewGame);
+
+            // دکمه بارگذاری بازی
+            btnLoadGame = new Button
+            {
+                Text = "Load Game",
+                Font = new Font("Arial", 18),
+                ForeColor = Color.White,
+                BackColor = Color.FromArgb(70, 70, 70),
+                FlatStyle = FlatStyle.Flat,
+                Size = new Size(300, 50)
+            };
+            btnLoadGame.Location = new Point(
+                (this.ClientSize.Width) / 2 + 490,
+                btnNewGame.Bottom + 20
+            );
+            btnLoadGame.Click += BtnLoadGame_Click;
             this.Controls.Add(btnLoadGame);
+
+            // دکمه تنظیمات
+            btnSettings = new Button
+            {
+                Text = "Settings",
+                Font = new Font("Arial", 18),
+                ForeColor = Color.White,
+                BackColor = Color.FromArgb(70, 70, 70),
+                FlatStyle = FlatStyle.Flat,
+                Size = new Size(300, 50)
+            };
+            btnSettings.Location = new Point(
+                (this.ClientSize.Width) / 2 + 490,
+                btnLoadGame.Bottom + 20
+            );
+            btnSettings.Click += BtnSettings_Click;
             this.Controls.Add(btnSettings);
+
+            // دکمه خروج
+            btnExit = new Button
+            {
+                Text = "Exit",
+                Font = new Font("Arial", 18),
+                ForeColor = Color.White,
+                BackColor = Color.FromArgb(70, 70, 70),
+                FlatStyle = FlatStyle.Flat,
+                Size = new Size(300, 50)
+            };
+            btnExit.Location = new Point(
+                (this.ClientSize.Width) / 2 + 490,
+                btnSettings.Bottom + 20
+            );
+            btnExit.Click += BtnExit_Click;
             this.Controls.Add(btnExit);
         }
 
-        private void StartNewGame()
+        private void BtnNewGame_Click(object sender, EventArgs e)
         {
-            var form = new FormCharacterCreation();
-            if (form.ShowDialog() == DialogResult.OK)
-            {
-                this.Hide();
-                new FormGame(form.CreatedPlayer).Show();
-            }
+            FormNewGame newGameForm = new FormNewGame();
+            newGameForm.Show();
+            this.Hide();
         }
 
-        private void LoadGame()
+        private void BtnLoadGame_Click(object sender, EventArgs e)
         {
-            var dialog = new OpenFileDialog()
-            {
-                Filter = "Save Files (*.sav)|*.sav"
-            };
-
-            if (dialog.ShowDialog() == DialogResult.OK)
-            {
-                var player = SaveManager.LoadGame(dialog.FileName);
-                this.Hide();
-                new FormGame(player).Show();
-            }
+            FormLoadGame loadGameForm = new FormLoadGame();
+            loadGameForm.Show();
+            this.Hide();
         }
 
-        private void ShowSettings()
+        private void BtnSettings_Click(object sender, EventArgs e)
         {
-            new FormSettings().ShowDialog();
+            FormSettings settingsForm = new FormSettings();
+            settingsForm.ShowDialog();
+        }
+
+        private void BtnExit_Click(object sender, EventArgs e)
+        {
+            Application.Exit();
         }
     }
 

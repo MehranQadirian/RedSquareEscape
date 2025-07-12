@@ -9,179 +9,125 @@ namespace RedSquareEscape.Classes
 {
     public class Enemy
     {
-        public EnemyType Type { get; }
-        public string Name { get; }
+        private PointF velocity = PointF.Empty;
+        private float randomMovementTimer = 0;
+        private PointF randomDirection = PointF.Empty;
         public PointF Position { get; set; }
-        public SizeF Size { get; }
         public float Health { get; set; }
-        public float MaxHealth { get; }
-        public float Damage { get; }
+        public float MaxHealth { get; set; }
+        public float Damage { get; set; }
         public float Speed { get; set; }
-        public int ScoreValue { get; }
-        public int CoinValue { get; }
-        public Color BaseColor { get; }
-        public EnemyBehavior Behavior { get; }
-        public bool IsDead => Health <= 0;
+        public Color Color { get; set; }
+        public string Name { get; set; }
+        public bool IsBoss { get; set; }
+        public EnemyType Type { get; set; }
 
-        // سیستم حمله
-        public float AttackCooldown { get; set; }
-        public float AttackRate { get; }
-        public List<EnemyAbility> Abilities { get; }
-
-        public Enemy(EnemyType type, PointF position)
+        public Enemy(PointF position, float health, float damage, float speed, Color color)
         {
-            Type = type;
             Position = position;
-
-            // تنظیمات بر اساس نوع دشمن
-            switch (type)
+            Health = MaxHealth = health;
+            Damage = damage;
+            Speed = speed;
+            Color = color;
+            Name = $"E{new Random().Next(1000)}";
+            Type = EnemyType.Normal;
+        }
+        public void ApplyEffect(EffectType effect)
+        {
+            switch (effect)
             {
-                case EnemyType.Grunt:
-                    Name = "سرباز";
-                    Size = new SizeF(25, 25);
-                    Health = MaxHealth = 50;
-                    Damage = 10;
-                    Speed = 120f;
-                    ScoreValue = 20;
-                    CoinValue = 5;
-                    BaseColor = Color.Red;
-                    Behavior = EnemyBehavior.Chase;
-                    AttackRate = 1.5f;
-                    Abilities = new List<EnemyAbility>();
+                case EffectType.Freeze:
+                    Speed *= 0.3f; // Reduce speed
                     break;
-
-                case EnemyType.Tank:
-                    Name = "تانک";
-                    Size = new SizeF(40, 40);
-                    Health = MaxHealth = 150;
-                    Damage = 20;
-                    Speed = 70f;
-                    ScoreValue = 50;
-                    CoinValue = 15;
-                    BaseColor = Color.DarkRed;
-                    Behavior = EnemyBehavior.Charge;
-                    AttackRate = 2f;
-                    Abilities = new List<EnemyAbility> { EnemyAbility.Shockwave };
+                case EffectType.Poison:
+                    // Apply poison over time
                     break;
-
-                    // انواع دیگر دشمنان...
             }
         }
-
-        public void Update(Player player, float deltaTime)
+        public void Update(PointF playerPosition)
         {
-            // به‌روزرسانی رفتار
-            UpdateBehavior(player, deltaTime);
+            // Simple AI: Move toward player
+            randomMovementTimer -= 0.1f;
 
-            // به‌روزرسانی زمان توانایی‌ها
-            AttackCooldown -= deltaTime;
-        }
-
-        private void UpdateBehavior(Player player, float deltaTime)
-        {
-            switch (Behavior)
+            if (randomMovementTimer <= 0)
             {
-                case EnemyBehavior.Chase:
-                    ChasePlayer(player, deltaTime);
-                    break;
-
-                case EnemyBehavior.Charge:
-                    ChargePlayer(player, deltaTime);
-                    break;
-
-                    // رفتارهای دیگر...
-            }
-        }
-
-        private void ChasePlayer(Player player, float deltaTime)
-        {
-            // محاسبه جهت به سمت بازیکن
-            PointF direction = new PointF(
-                player.Position.X - Position.X,
-                player.Position.Y - Position.Y);
-
-            // نرمالایز کردن جهت
-            float length = (float)Math.Sqrt(direction.X * direction.X + direction.Y * direction.Y);
-            if (length > 0)
-            {
-                direction.X /= length;
-                direction.Y /= length;
+                randomDirection = new PointF(
+                    (float)(new Random().NextDouble() * 2 - 1),
+                    (float)(new Random().NextDouble() * 2 - 1)
+                );
+                randomMovementTimer = 2f;
             }
 
-            // حرکت
+            PointF directionToPlayer = new PointF(
+                playerPosition.X - Position.X,
+                playerPosition.Y - Position.Y
+            );
+
+            float distance = (float)Math.Sqrt(directionToPlayer.X * directionToPlayer.X +
+                                            directionToPlayer.Y * directionToPlayer.Y);
+
+            if (distance > 0)
+            {
+                // ترکیب حرکت به سمت بازیکن و حرکت تصادفی
+                velocity.X += (directionToPlayer.X / distance * 0.7f + randomDirection.X * 0.3f) * 0.2f;
+                velocity.Y += (directionToPlayer.Y / distance * 0.7f + randomDirection.Y * 0.3f) * 0.2f;
+            }
+
+            // محدودیت سرعت
+            float speed = (float)Math.Sqrt(velocity.X * velocity.X + velocity.Y * velocity.Y);
+            if (speed > Speed)
+            {
+                velocity.X = velocity.X / speed * Speed;
+                velocity.Y = velocity.Y / speed * Speed;
+            }
+
+            // اعمال حرکت
             Position = new PointF(
-                Position.X + direction.X * Speed * deltaTime,
-                Position.Y + direction.Y * Speed * deltaTime);
+                Position.X + velocity.X,
+                Position.Y + velocity.Y
+            );
+        }
+
+        public void TakeDamage(float damage)
+        {
+            Health -= damage;
         }
 
         public void Draw(Graphics g)
         {
-            // رسم بدنه اصلی
-            using (var brush = new SolidBrush(BaseColor))
-            {
-                g.FillRectangle(brush,
-                    Position.X - Size.Width / 2,
-                    Position.Y - Size.Height / 2,
-                    Size.Width,
-                    Size.Height);
-            }
+            Brush brush = new SolidBrush(Color);
 
-            // نمایش وضعیت
-            DrawStatus(g);
-        }
+            // Draw enemy shape
+            g.FillRectangle(brush, Position.X - 15, Position.Y - 15, 30, 30);
 
-        private void DrawStatus(Graphics g)
-        {
-            // نوار سلامت
+            // Draw health bar
             float healthPercent = Health / MaxHealth;
-            float barWidth = 40;
-            float barHeight = 4;
+            g.FillRectangle(Brushes.Red, Position.X - 15, Position.Y - 25, 30, 5);
+            g.FillRectangle(Brushes.Green, Position.X - 15, Position.Y - 25, 30 * healthPercent, 5);
 
-            g.FillRectangle(Brushes.DarkRed,
-                Position.X - barWidth / 2,
-                Position.Y - Size.Height / 2 - 10,
-                barWidth,
-                barHeight);
+            // Draw enemy name
+            Font font = new Font("Arial", 8);
+            g.DrawString(Name, font, Brushes.Red, Position.X - 15, Position.Y - 40);
 
-            g.FillRectangle(Brushes.Red,
-                Position.X - barWidth / 2,
-                Position.Y - Size.Height / 2 - 10,
-                barWidth * healthPercent,
-                barHeight);
-
-            // نام دشمن
-            using (var font = new Font("Arial", 8))
+            // Draw boss indicator
+            if (IsBoss)
             {
-                var size = g.MeasureString(Name, font);
-                g.DrawString(Name, font, Brushes.White,
-                    Position.X - size.Width / 2,
-                    Position.Y - Size.Height / 2 - 25);
+                g.DrawString("BOSS", new Font("Arial", 10, FontStyle.Bold), Brushes.Purple,
+                    Position.X - 15, Position.Y - 55);
             }
         }
     }
 
     public enum EnemyType
     {
-        Grunt,
+        Normal,
+        Fast,
         Tank,
-        Sniper,
-        Bomber,
         Boss
     }
-
-    public enum EnemyBehavior
+    public enum EffectType
     {
-        Chase,
-        Charge,
-        Patrol,
-        Ranged
-    }
-
-    public enum EnemyAbility
-    {
-        Shockwave,
-        FireTrail,
-        Summon,
-        Teleport
+        Freeze,
+        Poison
     }
 }

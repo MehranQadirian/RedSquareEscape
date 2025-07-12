@@ -7,3 +7,13 @@ H:\13-C#Projects\RedSquareEscape\RedSquareEscape\bin\Debug\RedSquareEscape.exe
 H:\13-C#Projects\RedSquareEscape\RedSquareEscape\bin\Debug\RedSquareEscape.pdb
 H:\13-C#Projects\RedSquareEscape\RedSquareEscape\obj\Debug\RedSquareEscape.exe
 H:\13-C#Projects\RedSquareEscape\RedSquareEscape\obj\Debug\RedSquareEscape.pdb
+C:\Users\Diamond\Source\Repos\MehranQadirian\RedSquareEscape\RedSquareEscape\obj\Debug\RedSquareEscape.csprojAssemblyReference.cache
+C:\Users\Diamond\Source\Repos\MehranQadirian\RedSquareEscape\RedSquareEscape\obj\Debug\RedSquareEscape.Properties.Resources.resources
+C:\Users\Diamond\Source\Repos\MehranQadirian\RedSquareEscape\RedSquareEscape\obj\Debug\RedSquareEscape.csproj.GenerateResource.cache
+C:\Users\Diamond\Source\Repos\MehranQadirian\RedSquareEscape\RedSquareEscape\obj\Debug\RedSquareEscape.csproj.CoreCompileInputs.cache
+C:\Users\Diamond\Source\Repos\MehranQadirian\RedSquareEscape\RedSquareEscape\obj\Debug\RedSquareEscape.exe
+C:\Users\Diamond\Source\Repos\MehranQadirian\RedSquareEscape\RedSquareEscape\obj\Debug\RedSquareEscape.pdb
+C:\Users\Diamond\Source\Repos\MehranQadirian\RedSquareEscape\RedSquareEscape\bin\Debug\RedSquareEscape.exe.config
+C:\Users\Diamond\Source\Repos\MehranQadirian\RedSquareEscape\RedSquareEscape\bin\Debug\RedSquareEscape.exe
+C:\Users\Diamond\Source\Repos\MehranQadirian\RedSquareEscape\RedSquareEscape\bin\Debug\RedSquareEscape.pdb
+C:\Users\Diamond\Source\Repos\MehranQadirian\RedSquareEscape\RedSquareEscape\obj\Debug\RedSquareEscape.FormSettings.resources

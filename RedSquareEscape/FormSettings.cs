@@ -10,110 +10,181 @@ namespace RedSquareEscape
         private ComboBox cmbTheme;
         private ComboBox cmbLanguage;
         private ComboBox cmbPlayerShape;
-        private Button btnColorPicker;
+        private ColorDialog colorDialog;
+        private Button btnColor;
         private Button btnSave;
         private Button btnCancel;
-        private Color selectedColor = Color.Lime;
-        private ColorTheme currentTheme;
+
+        private Color currentPlayerColor = Color.Red;
+        private Theme currentTheme = Theme.DarkGreen;
 
         public FormSettings()
         {
             InitializeComponents();
-            this.Text = "Game Settings";
-            this.Size = new Size(400, 400);
-            this.StartPosition = FormStartPosition.CenterScreen;
-            this.FormBorderStyle = FormBorderStyle.FixedDialog;
-            this.MaximizeBox = false;
-            this.MinimizeBox = false;
         }
 
         private void InitializeComponents()
         {
-            // Theme Selection
-            Label lblTheme = new Label();
-            lblTheme.Text = "Theme:";
-            lblTheme.Location = new Point(20, 20);
+            this.BackColor = Color.FromArgb(30, 30, 30);
+            this.FormBorderStyle = FormBorderStyle.FixedDialog;
+            this.StartPosition = FormStartPosition.CenterScreen;
+            this.Size = new Size(500, 400);
+            this.Text = "Game Settings";
+            this.MaximizeBox = false;
+            this.MinimizeBox = false;
+
+            // عنوان فرم
+            Label lblTitle = new Label
+            {
+                Text = "Settings",
+                Font = new Font("Arial", 18, FontStyle.Bold),
+                ForeColor = Color.FromArgb(134, 253, 233),
+                AutoSize = true,
+                Location = new Point(20, 20)
+            };
+            this.Controls.Add(lblTitle);
+
+            // تم بازی
+            Label lblTheme = new Label
+            {
+                Text = "Theme:",
+                Font = new Font("Arial", 12),
+                ForeColor = Color.White,
+                AutoSize = true,
+                Location = new Point(20, 70)
+            };
             this.Controls.Add(lblTheme);
 
-            cmbTheme = new ComboBox();
-            cmbTheme.Items.AddRange(new object[] { "Green/Black", "Yellow/Navy", "Red/Black", "Pink/White" });
-            cmbTheme.SelectedIndex = 0;
-            cmbTheme.Location = new Point(120, 20);
-            cmbTheme.DropDownStyle = ComboBoxStyle.DropDownList;
+            cmbTheme = new ComboBox
+            {
+                Font = new Font("Arial", 12),
+                DropDownStyle = ComboBoxStyle.DropDownList,
+                Items = { "Dark Green", "Dark Blue", "Dark Red", "Pink White" },
+                SelectedIndex = 0,
+                Size = new Size(200, 30),
+                Location = new Point(150, 70)
+            };
             this.Controls.Add(cmbTheme);
 
-            // Language Selection
-            Label lblLanguage = new Label();
-            lblLanguage.Text = "Language:";
-            lblLanguage.Location = new Point(20, 60);
+            // زبان بازی
+            Label lblLanguage = new Label
+            {
+                Text = "Language:",
+                Font = new Font("Arial", 12),
+                ForeColor = Color.White,
+                AutoSize = true,
+                Location = new Point(20, 120)
+            };
             this.Controls.Add(lblLanguage);
 
-            cmbLanguage = new ComboBox();
-            cmbLanguage.Items.AddRange(new object[] { "English", "Persian" });
-            cmbLanguage.SelectedIndex = 0;
-            cmbLanguage.Location = new Point(120, 60);
-            cmbLanguage.DropDownStyle = ComboBoxStyle.DropDownList;
+            cmbLanguage = new ComboBox
+            {
+                Font = new Font("Arial", 12),
+                DropDownStyle = ComboBoxStyle.DropDownList,
+                Items = { "English", "Persian" },
+                SelectedIndex = 0,
+                Size = new Size(200, 30),
+                Location = new Point(150, 120)
+            };
             this.Controls.Add(cmbLanguage);
 
-            // Player Shape Selection
-            Label lblPlayerShape = new Label();
-            lblPlayerShape.Text = "Player Shape:";
-            lblPlayerShape.Location = new Point(20, 100);
-            this.Controls.Add(lblPlayerShape);
+            // شکل بازیکن
+            Label lblShape = new Label
+            {
+                Text = "Player Shape:",
+                Font = new Font("Arial", 12),
+                ForeColor = Color.White,
+                AutoSize = true,
+                Location = new Point(20, 170)
+            };
+            this.Controls.Add(lblShape);
 
-            cmbPlayerShape = new ComboBox();
-            cmbPlayerShape.Items.AddRange(new object[] { "Square", "Triangle", "Circle" });
-            cmbPlayerShape.SelectedIndex = 0;
-            cmbPlayerShape.Location = new Point(120, 100);
-            cmbPlayerShape.DropDownStyle = ComboBoxStyle.DropDownList;
+            cmbPlayerShape = new ComboBox
+            {
+                Font = new Font("Arial", 12),
+                DropDownStyle = ComboBoxStyle.DropDownList,
+                Items = { "Square", "Triangle", "Circle" },
+                SelectedIndex = 0,
+                Size = new Size(200, 30),
+                Location = new Point(150, 170)
+            };
             this.Controls.Add(cmbPlayerShape);
 
-            // Player Color Picker
-            Label lblPlayerColor = new Label();
-            lblPlayerColor.Text = "Player Color:";
-            lblPlayerColor.Location = new Point(20, 140);
-            this.Controls.Add(lblPlayerColor);
+            // رنگ بازیکن
+            Label lblColor = new Label
+            {
+                Text = "Player Color:",
+                Font = new Font("Arial", 12),
+                ForeColor = Color.White,
+                AutoSize = true,
+                Location = new Point(20, 220)
+            };
+            this.Controls.Add(lblColor);
 
-            btnColorPicker = new Button();
-            btnColorPicker.Text = "Choose Color";
-            btnColorPicker.BackColor = selectedColor;
-            btnColorPicker.Location = new Point(120, 140);
-            btnColorPicker.Click += BtnColorPicker_Click;
-            this.Controls.Add(btnColorPicker);
+            btnColor = new Button
+            {
+                Text = "Choose Color",
+                Font = new Font("Arial", 12),
+                BackColor = currentPlayerColor,
+                ForeColor = Color.White,
+                FlatStyle = FlatStyle.Flat,
+                Size = new Size(200, 30),
+                Location = new Point(150, 220)
+            };
+            btnColor.Click += BtnColor_Click;
+            this.Controls.Add(btnColor);
 
-            // Save Button
-            btnSave = new Button();
-            btnSave.Text = "Save";
-            btnSave.Location = new Point(100, 300);
+            colorDialog = new ColorDialog
+            {
+                AnyColor = true,
+                Color = currentPlayerColor
+            };
+
+            // دکمه ذخیره
+            btnSave = new Button
+            {
+                Text = "Save",
+                Font = new Font("Arial", 12),
+                BackColor = Color.FromArgb(70, 70, 70),
+                ForeColor = Color.White,
+                FlatStyle = FlatStyle.Flat,
+                Size = new Size(100, 40),
+                Location = new Point(150, 280)
+            };
             btnSave.Click += BtnSave_Click;
             this.Controls.Add(btnSave);
 
-            // Cancel Button
-            btnCancel = new Button();
-            btnCancel.Text = "Cancel";
-            btnCancel.Location = new Point(200, 300);
+            // دکمه انصراف
+            btnCancel = new Button
+            {
+                Text = "Cancel",
+                Font = new Font("Arial", 12),
+                BackColor = Color.FromArgb(70, 70, 70),
+                ForeColor = Color.White,
+                FlatStyle = FlatStyle.Flat,
+                Size = new Size(100, 40),
+                Location = new Point(260, 280)
+            };
             btnCancel.Click += BtnCancel_Click;
             this.Controls.Add(btnCancel);
         }
 
-        private void BtnColorPicker_Click(object sender, EventArgs e)
+        private void BtnColor_Click(object sender, EventArgs e)
         {
-            ColorDialog colorDialog = new ColorDialog();
             if (colorDialog.ShowDialog() == DialogResult.OK)
             {
-                selectedColor = colorDialog.Color;
-                btnColorPicker.BackColor = selectedColor;
+                currentPlayerColor = colorDialog.Color;
+                btnColor.BackColor = currentPlayerColor;
             }
         }
 
         private void BtnSave_Click(object sender, EventArgs e)
         {
-            // Save settings to application properties
-            Properties.Settings.Default.Theme = cmbTheme.SelectedIndex;
-            Properties.Settings.Default.Language = cmbLanguage.SelectedIndex;
-            Properties.Settings.Default.PlayerShape = cmbPlayerShape.SelectedIndex;
-            Properties.Settings.Default.PlayerColor = selectedColor;
-            Properties.Settings.Default.Save();
+            // ذخیره تنظیمات
+            currentTheme = (Theme)cmbTheme.SelectedIndex;
+
+            // اعمال تغییرات
+            ApplyTheme(currentTheme);
 
             this.DialogResult = DialogResult.OK;
             this.Close();
@@ -125,24 +196,32 @@ namespace RedSquareEscape
             this.Close();
         }
 
-        public ColorTheme GetSelectedTheme()
+        private void ApplyTheme(Theme theme)
         {
-            return currentTheme;
+            // اینجا می‌توانید تم بازی را تغییر دهید
+            switch (theme)
+            {
+                case Theme.DarkGreen:
+                    // اعمال تم سبز و مشکی
+                    break;
+                case Theme.DarkBlue:
+                    // اعمال تم زرد و آبی نفتی
+                    break;
+                case Theme.DarkRed:
+                    // اعمال تم قرمز و مشکی
+                    break;
+                case Theme.PinkWhite:
+                    // اعمال تم صورتی و سفید
+                    break;
+            }
         }
+    }
 
-        public PlayerShape GetSelectedShape()
-        {
-            return (PlayerShape)cmbPlayerShape.SelectedIndex;
-        }
-
-        public Color GetSelectedColor()
-        {
-            return selectedColor;
-        }
-
-        public string GetSelectedLanguage()
-        {
-            return cmbLanguage.SelectedItem.ToString();
-        }
+    public enum Theme
+    {
+        DarkGreen,
+        DarkBlue,
+        DarkRed,
+        PinkWhite
     }
 }

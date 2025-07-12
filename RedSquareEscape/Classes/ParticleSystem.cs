@@ -7,91 +7,67 @@ using System.Threading.Tasks;
 
 namespace RedSquareEscape.Classes
 {
+    public class ParticleSystem
+    {
+        private List<Particle> particles = new List<Particle>();
+        private Random random = new Random();
+
+        public void CreateParticles(PointF position, Color color, int count)
+        {
+            for (int i = 0; i < count; i++)
+            {
+                particles.Add(new Particle
+                {
+                    Position = position,
+                    Velocity = new PointF(
+                        (float)(random.NextDouble() * 6 - 3),
+                        (float)(random.NextDouble() * 6 - 3)
+                    ),
+                    Color = color,
+                    Life = 1f,
+                    Size = random.Next(3, 8)
+                });
+            }
+        }
+
+        public void Update()
+        {
+            for (int i = particles.Count - 1; i >= 0; i--)
+            {
+                particles[i].Position = new PointF(
+                    particles[i].Position.X + particles[i].Velocity.X,
+                    particles[i].Position.Y + particles[i].Velocity.Y
+                );
+
+                particles[i].Life -= 0.02f;
+
+                if (particles[i].Life <= 0)
+                    particles.RemoveAt(i);
+            }
+        }
+
+        public void Draw(Graphics g)
+        {
+            foreach (var particle in particles)
+            {
+                using (Brush brush = new SolidBrush(Color.FromArgb(
+                    (int)(particle.Life * 255), particle.Color)))
+                {
+                    g.FillEllipse(brush,
+                        particle.Position.X - particle.Size / 2,
+                        particle.Position.Y - particle.Size / 2,
+                        particle.Size, particle.Size);
+                }
+            }
+        }
+    }
+
     public class Particle
     {
         public PointF Position { get; set; }
         public PointF Velocity { get; set; }
         public Color Color { get; set; }
-        public float Size { get; set; }
-        public float Lifetime { get; set; }
-        public float MaxLifetime { get; set; }
-
-        public void Update(float deltaTime)
-        {
-            Position = new PointF(
-                Position.X + Velocity.X * deltaTime,
-                Position.Y + Velocity.Y * deltaTime);
-
-            Lifetime += deltaTime;
-            Size *= 0.98f;
-        }
-
-        public void Draw(Graphics g)
-        {
-            float alpha = 255 * (1 - Lifetime / MaxLifetime);
-            using (var brush = new SolidBrush(Color.FromArgb((int)alpha, Color)))
-            {
-                g.FillEllipse(brush, Position.X - Size / 2, Position.Y - Size / 2, Size, Size);
-            }
-        }
-    }
-
-    public static class ParticleSystem
-    {
-        private static List<Particle> particles = new List<Particle>();
-        private static Random random = new Random();
-
-        public static void Update(float deltaTime)
-        {
-            for (int i = particles.Count - 1; i >= 0; i--)
-            {
-                particles[i].Update(deltaTime);
-                if (particles[i].Lifetime >= particles[i].MaxLifetime)
-                {
-                    particles.RemoveAt(i);
-                }
-            }
-        }
-
-        public static void Draw(Graphics g)
-        {
-            foreach (var particle in particles)
-            {
-                particle.Draw(g);
-            }
-        }
-
-        public static void CreateExplosion(PointF position, Color color, int count = 20)
-        {
-            for (int i = 0; i < count; i++)
-            {
-                particles.Add(new Particle()
-                {
-                    Position = position,
-                    Velocity = new PointF(
-                        (float)(random.NextDouble() * 2 - 1) * 100,
-                        (float)(random.NextDouble() * 2 - 1) * 100),
-                    Color = color,
-                    Size = (float)(random.NextDouble() * 5 + 2),
-                    Lifetime = 0,
-                    MaxLifetime = (float)(random.NextDouble() * 0.5 + 0.3)
-                });
-            }
-        }
-
-        public static void CreateTrail(PointF position, Color color)
-        {
-            particles.Add(new Particle()
-            {
-                Position = position,
-                Velocity = new PointF(
-                    (float)(random.NextDouble() * 2 - 1) * 10,
-                    (float)(random.NextDouble() * 2 - 1) * 10),
-                Color = color,
-                Size = (float)(random.NextDouble() * 3 + 1),
-                Lifetime = 0,
-                MaxLifetime = (float)(random.NextDouble() * 0.3 + 0.2)
-            });
-        }
+        public float Life { get; set; }
+        public int Size { get; set; }
     }
 }

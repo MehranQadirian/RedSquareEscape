@@ -50,24 +50,18 @@
     <Compile Include="Classes\ColorTheme.cs" />
     <Compile Include="Classes\Enemy.cs" />
     <Compile Include="Classes\GameManager.cs" />
+    <Compile Include="Classes\Inventory.cs" />
     <Compile Include="Classes\ItemSystem.cs" />
     <Compile Include="Classes\ParticleSystem.cs" />
     <Compile Include="Classes\Player.cs" />
     <Compile Include="Classes\ResourceManager.cs" />
     <Compile Include="Classes\SaveManager.cs" />
-    <Compile Include="Classes\UIManager.cs" />
     <Compile Include="Classes\Weapon.cs" />
     <Compile Include="Form1.cs">
       <SubType>Form</SubType>
     </Compile>
     <Compile Include="Form1.Designer.cs">
       <DependentUpon>Form1.cs</DependentUpon>
-    </Compile>
-    <Compile Include="FormCharacterCreation.cs">
-      <SubType>Form</SubType>
-    </Compile>
-    <Compile Include="FormCharacterCreation.Designer.cs">
-      <DependentUpon>FormCharacterCreation.cs</DependentUpon>
     </Compile>
     <Compile Include="FormGame.cs">
       <SubType>Form</SubType>
@@ -129,8 +123,17 @@
     <Compile Include="FormShop.Designer.cs">
       <DependentUpon>FormShop.cs</DependentUpon>
     </Compile>
+    <Compile Include="FormTutorial.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="FormTutorial.Designer.cs">
+      <DependentUpon>FormTutorial.cs</DependentUpon>
+    </Compile>
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <EmbeddedResource Include="FormSettings.resx">
+      <DependentUpon>FormSettings.cs</DependentUpon>
+    </EmbeddedResource>
     <EmbeddedResource Include="Properties\Resources.resx">
       <Generator>ResXFileCodeGenerator</Generator>
       <LastGenOutput>Resources.Designer.cs</LastGenOutput>

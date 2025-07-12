@@ -7,64 +7,64 @@ namespace RedSquareEscape.Classes
 {
     public static class SaveManager
     {
-        public static void SaveGame(Player player, string filePath)
-        {
-            var saveData = new SaveData()
-            {
-                PlayerName = player.Name,
-                Health = player.Health,
-                MaxHealth = player.MaxHealth,
-                Score = player.Score,
-                Coins = player.Coins,
-                Level = player.Level,
-                Experience = player.Experience,
-                Inventory = player.Inventory
-            };
+        private static string savePath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments), "RedSquareEscapeSaves");
 
-            using (var stream = File.Create(filePath))
+        public static void SaveGame(GameState gameState, string saveName)
+        {
+            if (!Directory.Exists(savePath))
             {
-                var formatter = new BinaryFormatter();
-                formatter.Serialize(stream, saveData);
+                Directory.CreateDirectory(savePath);
+            }
+
+            string filePath = Path.Combine(savePath, $"{saveName}.save");
+
+            using (FileStream fs = new FileStream(filePath, FileMode.Create))
+            {
+                BinaryFormatter formatter = new BinaryFormatter();
+                formatter.Serialize(fs, gameState);
             }
         }
 
-        public static Player LoadGame(string filePath)
+        public static GameState LoadGame(string saveName)
         {
-            using (var stream = File.OpenRead(filePath))
+            string filePath = Path.Combine(savePath, $"{saveName}.save");
+
+            if (!File.Exists(filePath))
+                return null;
+
+            using (FileStream fs = new FileStream(filePath, FileMode.Open))
             {
-                var formatter = new BinaryFormatter();
-                var saveData = (SaveData)formatter.Deserialize(stream);
+                BinaryFormatter formatter = new BinaryFormatter();
+                return (GameState)formatter.Deserialize(fs);
+            }
+        }
 
-                var player = new Player(saveData.PlayerName)
-                {
-                    Health = saveData.Health,
-                    MaxHealth = saveData.MaxHealth,
-                    Score = saveData.Score,
-                    Coins = saveData.Coins,
-                    Level = saveData.Level,
-                    Experience = saveData.Experience
-                };
+        public static string[] GetSaveFiles()
+        {
+            if (!Directory.Exists(savePath))
+                return new string[0];
 
-                foreach (var item in saveData.Inventory)
-                {
-                    player.Inventory[item.Key] = item.Value;
-                }
+            return Directory.GetFiles(savePath, "*.save");
+        }
 
-                return player;
+        public static void DeleteSave(string saveName)
+        {
+            string filePath = Path.Combine(savePath, $"{saveName}.save");
+            if (File.Exists(filePath))
+            {
+                File.Delete(filePath);
             }
         }
     }
 
     [Serializable]
-    public class SaveData
+    public class GameState
     {
-        public string PlayerName { get; set; }
-        public float Health { get; set; }
-        public float MaxHealth { get; set; }
+        public Player Player { get; set; }
+        public int CurrentLevel { get; set; }
         public int Score { get; set; }
         public int Coins { get; set; }
-        public int Level { get; set; }
-        public int Experience { get; set; }
-        public Dictionary<string, int> Inventory { get; set; }
+        public DateTime SaveTime { get; set; }
+        public string StageName { get; set; }
     }
 }

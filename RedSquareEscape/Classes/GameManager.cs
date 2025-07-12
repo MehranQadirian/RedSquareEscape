@@ -1,92 +1,293 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Drawing;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Windows.Forms;
 
 namespace RedSquareEscape.Classes
 {
-    public static class GameManager
+    public class GameManager
     {
-        public static int CurrentLevel { get; private set; } = 1;
-        public static int EnemiesKilled { get; private set; }
-        public static int TotalScore { get; private set; }
-        public static int TotalCoins { get; private set; }
-        public static GameState State { get; private set; } = GameState.MainMenu;
+        public Player Player { get; set; }
+        public List<Enemy> Enemies { get; set; } = new List<Enemy>();
+        public List<Bullet> Bullets { get; set; } = new List<Bullet>();
+        public List<Item> Items { get; set; } = new List<Item>();
+        public int CurrentLevel { get; set; } = 1;
+        public int Score { get; set; } = 0;
+        public bool IsPaused { get; set; } = false;
+        public bool IsGameOver { get; set; } = false;
 
-        private static Dictionary<int, LevelSettings> levelSettings = new Dictionary<int, LevelSettings>()
-    {
-        {1, new LevelSettings(5, 1.0f, EnemyType.Grunt)},
-        {2, new LevelSettings(8, 0.9f, EnemyType.Grunt)},
-        {3, new LevelSettings(10, 0.8f, EnemyType.Grunt)},
-        {4, new LevelSettings(7, 1.0f, EnemyType.Tank)},
-        {5, new LevelSettings(12, 0.7f, EnemyType.Grunt)},
-        {6, new LevelSettings(15, 0.6f, EnemyType.Grunt)},
-        {7, new LevelSettings(10, 0.8f, EnemyType.Tank)},
-        {8, new LevelSettings(20, 0.5f, EnemyType.Grunt)},
-        {9, new LevelSettings(1, 1.0f, EnemyType.Boss)}
-    };
+        private Timer gameTimer;
+        private Random random = new Random();
+        private int enemySpawnTimer = 0;
+        private int itemSpawnTimer = 0;
 
-        public static void StartNewGame()
+        public event Action OnGameOver;
+        public event Action OnLevelComplete;
+
+        public GameManager(Player player)
         {
-            CurrentLevel = 1;
-            EnemiesKilled = 0;
-            TotalScore = 0;
-            TotalCoins = 0;
-            State = GameState.Playing;
+            Player = player;
+            InitializeGame();
         }
 
-        public static LevelSettings GetCurrentLevelSettings()
+        private void InitializeGame()
         {
-            return levelSettings.ContainsKey(CurrentLevel) ?
-                levelSettings[CurrentLevel] :
-                new LevelSettings(15, 0.5f, EnemyType.Grunt);
+            gameTimer = new Timer { Interval = 16 }; // ~60 FPS
+            gameTimer.Tick += UpdateGame;
+            gameTimer.Start();
         }
 
-        public static void LevelCompleted()
+        private void UpdateGame(object sender, EventArgs e)
+        {
+            if (IsPaused || IsGameOver) return;
+
+            // Update player
+            // (Player movement is handled by input)
+
+            // Update enemies
+            foreach (var enemy in Enemies)
+            {
+                enemy.Update(Player.Position);
+
+                // Check enemy-player collision
+                if (IsColliding(enemy.Position, Player.Position, 30))
+                {
+                    Player.TakeDamage(enemy.Damage);
+                }
+            }
+
+            // Update bullets
+            for (int i = Bullets.Count - 1; i >= 0; i--)
+            {
+                Bullets[i].Update();
+
+                // Check bullet-enemy collision
+                for (int j = Enemies.Count - 1; j >= 0; j--)
+                {
+                    if (IsColliding(Bullets[i].Position, Enemies[j].Position, 20))
+                    {
+                        Enemies[j].TakeDamage(Bullets[i].Damage);
+                        Bullets.RemoveAt(i);
+                        if (Enemies[j].Health <= 0)
+                        {
+                            Player.Score += 20;
+                            Enemies.RemoveAt(j);
+                        }
+                        break;
+                    }
+                }
+
+                try
+                {
+                    // Remove bullets that are out of bounds
+                    if (IsOutOfBounds(Bullets[i].Position))
+                    {
+                        Bullets.RemoveAt(i);
+                    }
+                }
+                catch(Exception ex)
+                {
+                    MessageBox.Show($"Error : {ex.Message}" , "error");
+                }
+            }
+
+            // Spawn enemies
+            enemySpawnTimer++;
+            if (enemySpawnTimer >= 120 - (CurrentLevel * 5)) // Faster spawning as level increases
+            {
+                SpawnEnemy();
+                enemySpawnTimer = 0;
+            }
+
+            // Spawn items
+            itemSpawnTimer++;
+            if (itemSpawnTimer >= 300) // Every 5 seconds at 60 FPS
+            {
+                SpawnItem();
+                itemSpawnTimer = 0;
+            }
+
+            // Check level completion
+            if (Score >= CurrentLevel * 100)
+            {
+                CompleteLevel();
+            }
+        }
+        private void CheckGameOver()
+        {
+            if (Player.Health <= 0)
+            {
+                OnGameOver?.Invoke(); // فراخوانی رویداد
+            }
+        }
+        private void SpawnEnemy()
+        {
+            PointF spawnPosition;
+
+            // Spawn at edges of screen
+            if (random.Next(2) == 0)
+            {
+                // Left or right edge
+                float x = random.Next(2) == 0 ? -30 : 800;
+                float y = random.Next(600);
+                spawnPosition = new PointF(x, y);
+            }
+            else
+            {
+                // Top or bottom edge
+                float x = random.Next(800);
+                float y = random.Next(2) == 0 ? -30 : 600;
+                spawnPosition = new PointF(x, y);
+            }
+
+            Enemy enemy;
+            int enemyType = random.Next(100);
+
+            if (enemyType < 60 - CurrentLevel) // Normal enemy
+            {
+                enemy = new Enemy(spawnPosition, 30, 1, 2f, Color.Red);
+            }
+            else if (enemyType < 90 - CurrentLevel) // Fast enemy
+            {
+                enemy = new Enemy(spawnPosition, 20, 0.5f, 4f, Color.Yellow);
+            }
+            else // Tank enemy
+            {
+                enemy = new Enemy(spawnPosition, 60, 2, 1f, Color.Blue);
+            }
+
+            Enemies.Add(enemy);
+        }
+        private bool CheckCollision(PointF pos1, PointF pos2, float radius1, float radius2)
+        {
+            float dx = pos1.X - pos2.X;
+            float dy = pos1.Y - pos2.Y;
+            float distance = (float)Math.Sqrt(dx * dx + dy * dy);
+            return distance < (radius1 + radius2);
+        }
+        private void HandleCollisions()
+        {
+            foreach (var enemy in Enemies)
+            {
+                if (CheckCollision(Player.Position, enemy.Position, 15, 15))
+                {
+                    PointF pushDirection = new PointF(
+                        Player.Position.X - enemy.Position.X,
+                        Player.Position.Y - enemy.Position.Y
+                    );
+
+                    float distance = (float)Math.Sqrt(pushDirection.X * pushDirection.X +
+                                                    pushDirection.Y * pushDirection.Y);
+
+                    if (distance > 0)
+                    {
+                        float pushForce = 5f;
+                        // حالا دیگر به velocity دسترسی داریم
+                        Player.velocity.X += pushDirection.X / distance * pushForce;
+                        Player.velocity.Y += pushDirection.Y / distance * pushForce;
+
+                        Player.TakeDamage(enemy.Damage);
+                    }
+                }
+            }
+        }
+        private void SpawnItem()
+        {
+            PointF position = new PointF(random.Next(50, 750), random.Next(50, 550));
+            Item item;
+
+            switch (random.Next(4))
+            {
+                case 0:
+                    item = new Item(position, ItemType.HealthPotion, 20);
+                    break;
+                case 1:
+                    item = new Item(position, ItemType.ShieldPotion, 15);
+                    break;
+                case 2:
+                    item = new Item(position, ItemType.Bomb, 0);
+                    break;
+                default:
+                    item = new Item(position, ItemType.Freeze, 0);
+                    break;
+            }
+
+            Items.Add(item);
+        }
+
+        private bool IsColliding(PointF pos1, PointF pos2, float distance)
+        {
+            float dx = pos1.X - pos2.X;
+            float dy = pos1.Y - pos2.Y;
+            return (dx * dx + dy * dy) < (distance * distance);
+        }
+
+        private bool IsOutOfBounds(PointF position)
+        {
+            return position.X < -50 || position.X > 850 ||
+                   position.Y < -50 || position.Y > 650;
+        }
+
+        private void CompleteLevel()
         {
             CurrentLevel++;
-            State = GameState.LevelTransition;
+            OnLevelComplete?.Invoke();
+
+            // Every 3 levels, spawn a boss
+            if (CurrentLevel % 3 == 0)
+            {
+                SpawnBoss();
+            }
         }
 
-        public static void GameOver()
+        private void SpawnBoss()
         {
-            State = GameState.GameOver;
+            PointF position = new PointF(400, -50);
+            Enemy boss = new Enemy(position, 200, 3, 1.5f, Color.Purple);
+            boss.IsBoss = true;
+            Enemies.Add(boss);
         }
 
-        public static void AddScore(int score)
+        public void PauseGame()
         {
-            TotalScore += score;
-            EnemiesKilled++;
+            IsPaused = true;
+            gameTimer.Stop();
         }
 
-        public static void AddCoins(int coins)
+        public void ResumeGame()
         {
-            TotalCoins += coins;
+            IsPaused = false;
+            gameTimer.Start();
         }
-    }
 
-    public class LevelSettings
-    {
-        public int EnemyCount { get; }
-        public float DifficultyModifier { get; }
-        public EnemyType MainEnemyType { get; }
-
-        public LevelSettings(int enemyCount, float difficultyModifier, EnemyType mainEnemyType)
+        public void SaveGame(string saveName)
         {
-            EnemyCount = enemyCount;
-            DifficultyModifier = difficultyModifier;
-            MainEnemyType = mainEnemyType;
-        }
-    }
+            GameState gameState = new GameState
+            {
+                Player = this.Player,
+                CurrentLevel = this.CurrentLevel,
+                Score = this.Score,
+                Coins = this.Player.Coins,
+                SaveTime = DateTime.Now,
+                StageName = $"Level {CurrentLevel}"
+            };
 
-    public enum GameState
-    {
-        MainMenu,
-        Playing,
-        Paused,
-        LevelTransition,
-        GameOver,
-        Shop
+            SaveManager.SaveGame(gameState, saveName);
+        }
+
+        public void LoadGame(string saveName)
+        {
+            GameState gameState = SaveManager.LoadGame(saveName);
+            if (gameState != null)
+            {
+                this.Player = gameState.Player;
+                this.CurrentLevel = gameState.CurrentLevel;
+                this.Score = gameState.Score;
+                this.Player.Coins = gameState.Coins;
+            }
+        }
     }
 }

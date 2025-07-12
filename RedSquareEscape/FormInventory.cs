@@ -9,76 +9,137 @@ namespace RedSquareEscape
     public partial class FormInventory : Form
     {
         private Player player;
-        private ListBox lstItems;
-        private Label lblDescription;
+        private FlowLayoutPanel flpItems;
+        private Button btnClose;
 
         public FormInventory(Player player)
         {
             this.player = player;
             InitializeComponents();
-            this.Text = "Inventory";
-            this.Size = new Size(400, 400);
-            this.StartPosition = FormStartPosition.CenterScreen;
+            LoadInventoryItems();
         }
 
         private void InitializeComponents()
         {
-            // Items List
-            lstItems = new ListBox
-            {
-                Size = new Size(150, 250),
-                Location = new Point(20, 50)
-            };
-            lstItems.SelectedIndexChanged += LstItems_SelectedIndexChanged;
-            this.Controls.Add(lstItems);
+            this.BackColor = Color.FromArgb(30, 30, 30);
+            this.FormBorderStyle = FormBorderStyle.FixedDialog;
+            this.StartPosition = FormStartPosition.CenterScreen;
+            this.Size = new Size(600, 500);
+            this.Text = "Inventory";
+            this.MaximizeBox = false;
+            this.MinimizeBox = false;
 
-            // Description
-            lblDescription = new Label
+            // عنوان موجودی
+            Label lblTitle = new Label
             {
-                Size = new Size(200, 150),
-                Location = new Point(180, 50),
-                BorderStyle = BorderStyle.FixedSingle
+                Text = "Inventory",
+                Font = new Font("Arial", 18, FontStyle.Bold),
+                ForeColor = Color.FromArgb(134, 253, 233),
+                AutoSize = true,
+                Location = new Point(20, 20)
             };
-            this.Controls.Add(lblDescription);
+            this.Controls.Add(lblTitle);
 
-            // Refresh inventory
-            RefreshInventory();
+            // پنل آیتم‌ها
+            flpItems = new FlowLayoutPanel
+            {
+                AutoScroll = true,
+                BackColor = Color.FromArgb(50, 50, 50),
+                Size = new Size(560, 380),
+                Location = new Point(20, 70)
+            };
+            this.Controls.Add(flpItems);
+
+            // دکمه بستن
+            btnClose = new Button
+            {
+                Text = "Close",
+                Font = new Font("Arial", 14),
+                BackColor = Color.FromArgb(70, 70, 70),
+                ForeColor = Color.White,
+                FlatStyle = FlatStyle.Flat,
+                Size = new Size(100, 40),
+                Location = new Point(
+                    (this.ClientSize.Width - 100) / 2,
+                    flpItems.Bottom + 20
+                )
+            };
+            btnClose.Click += BtnClose_Click;
+            this.Controls.Add(btnClose);
         }
 
-        public void RefreshInventory()
+        private void LoadInventoryItems()
         {
-            lstItems.Items.Clear();
-            foreach (var item in player.Inventory)
+            foreach (var item in player.Inventory.Items)
             {
-                lstItems.Items.Add($"{item.Key} x{item.Value}");
+                AddItemToPanel(item);
             }
         }
 
-        private void LstItems_SelectedIndexChanged(object sender, EventArgs e)
+        private void AddItemToPanel(Item item)
         {
-            if (lstItems.SelectedIndex == -1)
+            Panel itemPanel = new Panel
             {
-                lblDescription.Text = "";
-                return;
-            }
+                BackColor = Color.FromArgb(70, 70, 70),
+                Size = new Size(240, 120),
+                Margin = new Padding(10)
+            };
 
-            string itemName = lstItems.SelectedItem.ToString().Split(' ')[0];
-
-            switch (itemName)
+            // نام آیتم
+            Label lblName = new Label
             {
-                case "Bomb":
-                    lblDescription.Text = "Bomb\n\nDestroys all enemies on screen.";
-                    break;
-                case "Freeze":
-                    lblDescription.Text = "Freeze\n\nFreezes all enemies for 5 seconds.";
-                    break;
-                case "HealthPotion":
-                    lblDescription.Text = "Health Potion\n\nRestores 1 health point.";
-                    break;
-                default:
-                    lblDescription.Text = itemName + "\n\nNo description available.";
-                    break;
-            }
+                Text = item.Name,
+                Font = new Font("Arial", 12, FontStyle.Bold),
+                ForeColor = Color.White,
+                AutoSize = true,
+                Location = new Point(10, 10)
+            };
+            itemPanel.Controls.Add(lblName);
+
+            // توضیحات آیتم
+            Label lblDesc = new Label
+            {
+                Text = item.Description,
+                Font = new Font("Arial", 10),
+                ForeColor = Color.LightGray,
+                AutoSize = true,
+                Location = new Point(10, 40),
+                MaximumSize = new Size(220, 0)
+            };
+            itemPanel.Controls.Add(lblDesc);
+
+            // دکمه استفاده
+            Button btnUse = new Button
+            {
+                Text = "Use",
+                Font = new Font("Arial", 10),
+                BackColor = Color.FromArgb(50, 50, 50),
+                ForeColor = Color.White,
+                FlatStyle = FlatStyle.Flat,
+                Size = new Size(80, 30),
+                Location = new Point(150, 80),
+                Tag = item
+            };
+            btnUse.Click += BtnUse_Click;
+            itemPanel.Controls.Add(btnUse);
+
+            flpItems.Controls.Add(itemPanel);
+        }
+
+        private void BtnUse_Click(object sender, EventArgs e)
+        {
+            Button btn = (Button)sender;
+            Item item = (Item)btn.Tag;
+
+            player.UseItem(item);
+            flpItems.Controls.Clear();
+            LoadInventoryItems();
+        }
+
+        private void BtnClose_Click(object sender, EventArgs e)
+        {
+            this.DialogResult = DialogResult.OK;
+            this.Close();
         }
     }
 }

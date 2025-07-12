@@ -9,101 +9,67 @@ namespace RedSquareEscape.Classes
 {
     public class Weapon
     {
-        public string Name { get; }
-        public int Damage { get; set; }
-        public float FireRate { get; }
-        public float BulletSpeed { get; }
-        public WeaponType Type { get; }
-        public float LastShotTime { get; set; }
-        public int UpgradeLevel { get; private set; } = 1;
+        public string Name { get; set; } = "Pistol";
+        public float FireRate { get; set; } = 0.5f;
+        public float Damage { get; set; } = 10f;
+        public int BulletCount { get; set; } = 1;
+        public float SpreadAngle { get; set; } = 0f;
+        public Color BulletColor { get; set; } = Color.White;
 
-        public Weapon(string name, int damage, float fireRate, float bulletSpeed, WeaponType type)
+        private float lastShotTime = 0f;
+
+        public List<Bullet> Shoot(PointF position)
         {
-            Name = name;
-            Damage = damage;
-            FireRate = fireRate;
-            BulletSpeed = bulletSpeed;
-            Type = type;
-        }
+            List<Bullet> bullets = new List<Bullet>();
+            PointF direction = GetShootingDirection(position);
 
-        public List<Bullet> Shoot(PointF position, List<Enemy> enemies)
-        {
-            var bullets = new List<Bullet>();
-            Enemy nearestEnemy = FindNearestEnemy(position, enemies);
-
-            switch (Type)
+            if (BulletCount == 1)
             {
-                case WeaponType.Straight:
-                    bullets.Add(CreateBullet(position, nearestEnemy));
-                    break;
+                bullets.Add(new Bullet(position, direction, Damage) { Color = BulletColor });
+            }
+            else
+            {
+                float startAngle = -SpreadAngle / 2;
+                float angleStep = SpreadAngle / (BulletCount - 1);
 
-                case WeaponType.Double:
-                    bullets.Add(CreateBullet(position, nearestEnemy, -0.1f));
-                    bullets.Add(CreateBullet(position, nearestEnemy, 0.1f));
-                    break;
-
-                case WeaponType.Spread:
-                    for (float angle = -0.3f; angle <= 0.3f; angle += 0.15f)
-                    {
-                        bullets.Add(CreateBullet(position, nearestEnemy, angle));
-                    }
-                    break;
-
-                case WeaponType.Homing:
-                    var homingBullet = CreateBullet(position, nearestEnemy);
-                    homingBullet.IsHoming = true;
-                    homingBullet.HomingStrength = 0.1f;
-                    bullets.Add(homingBullet);
-                    break;
+                for (int i = 0; i < BulletCount; i++)
+                {
+                    float angle = startAngle + i * angleStep;
+                    PointF bulletDirection = RotateVector(direction, angle);
+                    bullets.Add(new Bullet(position, bulletDirection, Damage) { Color = BulletColor });
+                }
             }
 
-            LastShotTime = GameTime.CurrentTime;
+            lastShotTime = GetCurrentTime();
             return bullets;
         }
 
-        private Bullet CreateBullet(PointF position, Enemy target, float angleOffset = 0)
+        private PointF GetShootingDirection(PointF position)
         {
-            PointF direction = target != null ?
-                new PointF(
-                    target.Position.X - position.X,
-                    target.Position.Y - position.Y) :
-                new PointF(0, -1);
-
-            // اعمال انحراف اگر وجود دارد
-            if (angleOffset != 0)
-            {
-                direction = RotateVector(direction, angleOffset);
-            }
-
-            // نرمالایز کردن جهت
-            float length = (float)Math.Sqrt(direction.X * direction.X + direction.Y * direction.Y);
-            if (length > 0)
-            {
-                direction.X /= length;
-                direction.Y /= length;
-            }
-
-            return new Bullet(position, direction, BulletSpeed, Damage)
-            {
-                Owner = BulletOwner.Player,
-                WeaponType = this.Type
-            };
+            // Default direction (right)
+            return new PointF(1, 0);
         }
 
-        public void Upgrade()
+        private PointF RotateVector(PointF vector, float angle)
         {
-            UpgradeLevel++;
-            Damage = (int)(Damage * 1.3f);
-            FireRate *= 0.9f;
-        }
-    }
+            float rad = angle * (float)(Math.PI / 180);
+            float cos = (float)Math.Cos(rad);
+            float sin = (float)Math.Sin(rad);
 
-    public enum WeaponType
-    {
-        Straight,
-        Double,
-        Spread,
-        Homing,
-        Laser
+            return new PointF(
+                vector.X * cos - vector.Y * sin,
+                vector.X * sin + vector.Y * cos
+            );
+        }
+
+        private float GetCurrentTime()
+        {
+            return (float)Environment.TickCount / 1000f;
+        }
+
+        public bool CanShoot()
+        {
+            return (GetCurrentTime() - lastShotTime) >= FireRate;
+        }
     }
 }
