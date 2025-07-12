@@ -50,6 +50,7 @@
     <Compile Include="Classes\ColorTheme.cs" />
     <Compile Include="Classes\Enemy.cs" />
     <Compile Include="Classes\GameManager.cs" />
+    <Compile Include="Classes\InputState.cs" />
     <Compile Include="Classes\Inventory.cs" />
     <Compile Include="Classes\ItemSystem.cs" />
     <Compile Include="Classes\ParticleSystem.cs" />

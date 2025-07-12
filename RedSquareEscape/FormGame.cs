@@ -18,7 +18,7 @@ namespace RedSquareEscape
         private Label lblHealth;
         private Label lblLevel;
         private Panel pauseMenu;
-
+        private InputState inputState = new InputState();
         private Dictionary<Keys, bool> keyStates = new Dictionary<Keys, bool>();
         private ParticleSystem particleSystem = new ParticleSystem();
         public FormGame(Player player)
@@ -195,15 +195,7 @@ namespace RedSquareEscape
 
         private void GameTimer_Tick(object sender, EventArgs e)
         {
-            // پردازش حرکت ترکیبی
-            Direction moveDirection = Direction.None;
-
-            if (keyStates.ContainsKey(Keys.W) && keyStates[Keys.W]) moveDirection |= Direction.Up;
-            if (keyStates.ContainsKey(Keys.S) && keyStates[Keys.S]) moveDirection |= Direction.Down;
-            if (keyStates.ContainsKey(Keys.A) && keyStates[Keys.A]) moveDirection |= Direction.Left;
-            if (keyStates.ContainsKey(Keys.D) && keyStates[Keys.D]) moveDirection |= Direction.Right;
-
-            player.Move(moveDirection);
+            player.UpdateMovement(inputState);
             // Update UI
             lblScore.Text = $"Score: {player.Score}";
             lblHealth.Text = $"Health: {player.Health}/{player.MaxHealth}";
@@ -242,9 +234,25 @@ namespace RedSquareEscape
         private void FormGame_KeyDown(object sender, KeyEventArgs e)
         {
             if (gameManager.IsPaused) return;
-            keyStates[e.KeyCode] = true;
+            //keyStates[e.KeyCode] = true;
             switch (e.KeyCode)
             {
+                case Keys.W:
+                case Keys.Up:
+                    inputState.MoveUp = true;
+                    break;
+                case Keys.S:
+                case Keys.Down:
+                    inputState.MoveDown = true;
+                    break;
+                case Keys.A:
+                case Keys.Left:
+                    inputState.MoveLeft = true;
+                    break;
+                case Keys.D:
+                case Keys.Right:
+                    inputState.MoveRight = true;
+                    break;
                 case Keys.Space:
                     // Shoot
                     gameManager.Bullets.AddRange(player.CurrentWeapon.Shoot(player.Position));
@@ -263,7 +271,26 @@ namespace RedSquareEscape
         }
         private void FormGame_KeyUp(object sender, KeyEventArgs e)
         {
-            keyStates[e.KeyCode] = false;
+            //keyStates[e.KeyCode] = false;
+            switch (e.KeyCode)
+            {
+                case Keys.W:
+                case Keys.Up:
+                    inputState.MoveUp = false;
+                    break;
+                case Keys.S:
+                case Keys.Down:
+                    inputState.MoveDown = false;
+                    break;
+                case Keys.A:
+                case Keys.Left:
+                    inputState.MoveLeft = false;
+                    break;
+                case Keys.D:
+                case Keys.Right:
+                    inputState.MoveRight = false;
+                    break;
+            }
         }
         private void BtnPause_Click(object sender, EventArgs e)
         {

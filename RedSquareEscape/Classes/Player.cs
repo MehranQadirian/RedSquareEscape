@@ -17,10 +17,17 @@ namespace RedSquareEscape.Classes
 
     public class Player
     {
-        private float acceleration = 0.5f;
-        private float deceleration = 0.9f;
-        private float maxSpeed = 8f;
+        // متغیرهای حرکت
         public PointF velocity = PointF.Empty;
+        public float RotationAngle { get; private set; }
+
+        // تنظیمات حرکت
+        public float MoveSpeed { get; set; } = 5f;
+        public float Acceleration { get; set; } = 0.2f;
+        public float MaxSpeed { get; set; } = 8f;
+        public float Inertia { get; set; } = 0.95f;
+
+        // مشخصات بازیکن
         public string Name { get; set; }
         public int Age { get; set; }
         public PointF Position { get; set; }
@@ -31,40 +38,44 @@ namespace RedSquareEscape.Classes
         public int Score { get; set; } = 0;
         public int Coins { get; set; } = 0;
         public int Level { get; set; } = 1;
-        public float Speed { get; set; } = 5f;
         public PlayerShape Shape { get; set; } = PlayerShape.Square;
         public Color Color { get; set; } = Color.Red;
         public Inventory Inventory { get; set; } = new Inventory();
         public Weapon CurrentWeapon { get; set; } = new Weapon();
 
-        public void Move(Direction direction)
+        public void UpdateMovement(InputState input)
         {
-            // اعمال شتاب
-            if (direction.HasFlag(Direction.Up))
-                velocity.Y -= acceleration;
+            // اعمال شتاب بر اساس ورودی
+            float targetVelocityX = 0;
+            float targetVelocityY = 0;
 
-            if (direction.HasFlag(Direction.Down))
-                velocity.Y += acceleration;
+            if (input.MoveUp) targetVelocityY -= MoveSpeed;
+            if (input.MoveDown) targetVelocityY += MoveSpeed;
+            if (input.MoveLeft) targetVelocityX -= MoveSpeed;
+            if (input.MoveRight) targetVelocityX += MoveSpeed;
 
-            if (direction.HasFlag(Direction.Left))
-                velocity.X -= acceleration;
-
-            if (direction.HasFlag(Direction.Right))
-                velocity.X += acceleration;
-
-            // اگر هیچ جهتی فعال نبود (None)، سرعت را کاهش دهیم
-            if (direction == Direction.None)
+            // نرمالایز کردن جهت در صورت حرکت مورب
+            if (targetVelocityX != 0 && targetVelocityY != 0)
             {
-                velocity.X *= deceleration;
-                velocity.Y *= deceleration;
+                float length = (float)Math.Sqrt(targetVelocityX * targetVelocityX + targetVelocityY * targetVelocityY);
+                targetVelocityX = targetVelocityX / length * MoveSpeed;
+                targetVelocityY = targetVelocityY / length * MoveSpeed;
             }
 
+            // اعمال شتاب تدریجی
+            velocity = new PointF(
+                Lerp(velocity.X, targetVelocityX, Acceleration),
+                Lerp(velocity.Y, targetVelocityY, Acceleration)
+            );
+
             // محدودیت سرعت
-            float speed = (float)Math.Sqrt(velocity.X * velocity.X + velocity.Y * velocity.Y);
-            if (speed > maxSpeed)
+            float currentSpeed = (float)Math.Sqrt(velocity.X * velocity.X + velocity.Y * velocity.Y);
+            if (currentSpeed > MaxSpeed)
             {
-                velocity.X = velocity.X / speed * maxSpeed;
-                velocity.Y = velocity.Y / speed * maxSpeed;
+                velocity = new PointF(
+                    velocity.X / currentSpeed * MaxSpeed,
+                    velocity.Y / currentSpeed * MaxSpeed
+                );
             }
 
             // اعمال حرکت
@@ -73,16 +84,36 @@ namespace RedSquareEscape.Classes
                 Position.Y + velocity.Y
             );
 
+            // محاسبه زاویه چرخش
+            if (velocity.X != 0 || velocity.Y != 0)
+            {
+                RotationAngle = (float)(Math.Atan2(velocity.Y, velocity.X) * 180 / Math.PI);
+            }
+
+            // اعمال اینرسی هنگام رها کردن کلیدها
+            if (!input.MoveUp && !input.MoveDown && !input.MoveLeft && !input.MoveRight)
+            {
+                velocity = new PointF(velocity.X * Inertia, velocity.Y * Inertia);
+            }
+
             // محدودیت مرزهای صفحه
             Position = new PointF(
-            Clamp(Position.X, 30, 770),
-            Clamp(Position.Y, 30, 570)
-        );
+                Clamp(Position.X, 30, 770),
+                Clamp(Position.Y, 30, 570)
+            );
         }
+
+        private float Lerp(float a, float b, float t)
+        {
+            return a + (b - a) * t;
+        }
+
         private float Clamp(float value, float min, float max)
         {
             return (value < min) ? min : (value > max) ? max : value;
         }
+
+        // ... (بقیه متدها مانند TakeDamage, Die, UpgradeWeapon, etc.)
         public void TakeDamage(float damage)
         {
             if (Shield > 0)
@@ -107,9 +138,9 @@ namespace RedSquareEscape.Classes
 
         public void Die()
         {
-            // Handle player death
             Health = 0;
         }
+
         public void UpgradeWeapon()
         {
             if (CurrentWeapon.BulletCount < 10)
@@ -121,10 +152,12 @@ namespace RedSquareEscape.Classes
                 CurrentWeapon.Damage += 5;
             }
         }
+
         public void AddCoins(int amount)
         {
             Coins += amount;
         }
+
         public void UseItem(Item item)
         {
             switch (item.Type)
@@ -187,29 +220,19 @@ namespace RedSquareEscape.Classes
                         Position.Y - velocity.Y * i * 2
                     );
 
-                    // روش سازگار با نسخه‌های قدیمی:
-                    Brush trailBrush = null;
-                    try
+                    using (Brush trailBrush = new SolidBrush(Color.FromArgb((int)(trailAlpha / i), Color)))
                     {
-                        trailBrush = new SolidBrush(Color.FromArgb((int)(trailAlpha / i), Color));
                         g.FillEllipse(trailBrush, trailPos.X - 10, trailPos.Y - 10, 20, 20);
-                    }
-                    finally
-                    {
-                        if (trailBrush != null)
-                            trailBrush.Dispose();
                     }
                 }
             }
         }
     }
-    
-
 
     [Flags]
     public enum Direction
     {
-        None = 0,       // اضافه کردن مقدار None
+        None = 0,
         Up = 1,
         Down = 2,
         Left = 4,
