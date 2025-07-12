@@ -1,0 +1,9 @@
+H:\13-C#Projects\RedSquareEscape\RedSquareEscape\obj\Debug\RedSquareEscape.csprojAssemblyReference.cache
+H:\13-C#Projects\RedSquareEscape\RedSquareEscape\obj\Debug\RedSquareEscape.Properties.Resources.resources
+H:\13-C#Projects\RedSquareEscape\RedSquareEscape\obj\Debug\RedSquareEscape.csproj.GenerateResource.cache
+H:\13-C#Projects\RedSquareEscape\RedSquareEscape\obj\Debug\RedSquareEscape.csproj.CoreCompileInputs.cache
+H:\13-C#Projects\RedSquareEscape\RedSquareEscape\bin\Debug\RedSquareEscape.exe.config
+H:\13-C#Projects\RedSquareEscape\RedSquareEscape\bin\Debug\RedSquareEscape.exe
+H:\13-C#Projects\RedSquareEscape\RedSquareEscape\bin\Debug\RedSquareEscape.pdb
+H:\13-C#Projects\RedSquareEscape\RedSquareEscape\obj\Debug\RedSquareEscape.exe
+H:\13-C#Projects\RedSquareEscape\RedSquareEscape\obj\Debug\RedSquareEscape.pdb
